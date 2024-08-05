@@ -1,1 +1,4 @@
 # todolist
+
+### Color scheme used
+
