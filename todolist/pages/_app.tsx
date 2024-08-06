@@ -1,5 +1,5 @@
-import type { AppProps } from "next/app";
-import { useState, useEffect } from "react";
+import type {AppProps} from "next/app";
+import {useState, useEffect} from "react";
 import {
     Button,
     ChakraProvider,
@@ -10,10 +10,16 @@ import {
     IconButton,
     Box,
     Progress,
+    StatGroup,
+    Stat,
+    StatLabel,
+    StatNumber,
+    StatHelpText,
+    StatArrow,
 } from "@chakra-ui/react";
-import { DeleteIcon, EditIcon } from "@chakra-ui/icons";
-import { ref, set, push, onValue, update, remove, get } from "firebase/database";
-import { db } from "./config/firebaseConfig";
+import {DeleteIcon} from "@chakra-ui/icons";
+import {ref, set, push, onValue, update, remove, get} from "firebase/database";
+import {db} from "./config/firebaseConfig";
 
 interface Task {
     id: string;
@@ -21,7 +27,7 @@ interface Task {
     isChecked: boolean;
 }
 
-export default function App({ Component, pageProps }: AppProps) {
+export default function App({Component, pageProps}: AppProps) {
     const [newTask, setNewTask] = useState<string>("");
     const [tasks, setTasks] = useState<Task[]>([]);
 
@@ -30,7 +36,7 @@ export default function App({ Component, pageProps }: AppProps) {
         onValue(tasksRef, (snapshot) => {
             const data = snapshot.val();
             const tasksList = data
-                ? Object.keys(data).map((key) => ({ id: key, ...data[key] }))
+                ? Object.keys(data).map((key) => ({id: key, ...data[key]}))
                 : [];
             setTasks(tasksList);
         });
@@ -52,11 +58,11 @@ export default function App({ Component, pageProps }: AppProps) {
 
     const updateTaskStatus = async (id: string, isChecked: boolean) => {
         const taskRef = ref(db, `tasks/${id}`);
-        await update(taskRef, { isChecked });
+        await update(taskRef, {isChecked});
 
         setTasks((prevTasks) =>
             prevTasks.map((task) =>
-                task.id === id ? { ...task, isChecked } : task
+                task.id === id ? {...task, isChecked} : task
             )
         );
     };
@@ -79,6 +85,20 @@ export default function App({ Component, pageProps }: AppProps) {
     const totalTasksCount = tasks.length;
     const completionRatio =
         totalTasksCount === 0 ? 0 : (completedTasksCount / totalTasksCount) * 100;
+    const percentage = (completionRatio).toFixed(0);
+
+
+    const sortedTasks = tasks
+        .map((task, index) => ({...task, originalIndex: index})) // Index for sorting
+        .sort((a, b) => {
+            // Sort by checked status first (unchecked first)
+            if (a.isChecked !== b.isChecked) {
+                return Number(a.isChecked) - Number(b.isChecked);
+            }
+            // Sorts by original index (newest first, so reverse the index comparison)
+            return b.originalIndex - a.originalIndex;
+        })
+        .map(({originalIndex, ...task}) => task); // Removes the index property
 
     return (
         <ChakraProvider>
@@ -111,27 +131,28 @@ export default function App({ Component, pageProps }: AppProps) {
                     </form>
 
                     <Box mt={5}>
-                        {tasks
-                            .sort((a, b) => Number(a.isChecked) - Number(b.isChecked))
-                            .map((task) => (
-                                <TaskItem
-                                    key={task.id}
-                                    task={task}
-                                    updateTaskStatus={updateTaskStatus}
-                                    removeTask={removeTask}
-                                />
-                            ))}
+                        {sortedTasks.map((task) => (
+                            <TaskItem
+                                key={task.id}
+                                task={task}
+                                updateTaskStatus={updateTaskStatus}
+                                removeTask={removeTask}
+                            />
+                        ))}
                     </Box>
 
                     <Text mt={5} mb={2}>
-                        Progress
+                        Current progress of completed tasks:
                     </Text>
                     <Progress
                         value={completionRatio}
                         size="lg"
                         colorScheme="green"
-                        mb={5}
+                        mb={2}
                     />
+                    <Text fontSize="lg" color="green.500" mb={2}>
+                        {percentage}%
+                    </Text>
                 </Flex>
             </Flex>
         </ChakraProvider>
@@ -171,7 +192,7 @@ const TaskItem = ({
                 bg="red.500"
                 color="white"
                 aria-label="Delete task"
-                icon={<DeleteIcon />}
+                icon={<DeleteIcon/>}
                 ml={3}
             />
         </Flex>
