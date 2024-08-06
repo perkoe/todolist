@@ -1,5 +1,5 @@
 import type { AppProps } from "next/app";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Button,
     ChakraProvider,
@@ -9,41 +9,76 @@ import {
     Checkbox,
     IconButton,
     Box,
-    Progress
+    Progress,
 } from "@chakra-ui/react";
-import {DeleteIcon, EditIcon} from "@chakra-ui/icons";
+import { DeleteIcon, EditIcon } from "@chakra-ui/icons";
+import { ref, set, push, onValue, update, remove, get } from "firebase/database";
+import { db } from "./config/firebaseConfig";
+
+interface Task {
+    id: string;
+    text: string;
+    isChecked: boolean;
+}
 
 export default function App({ Component, pageProps }: AppProps) {
     const [newTask, setNewTask] = useState<string>("");
-    const [tasks, setTasks] = useState<{ text: string; isChecked: boolean }[]>([]);
+    const [tasks, setTasks] = useState<Task[]>([]);
 
-    const addTask = (e: React.FormEvent) => {
+    useEffect(() => {
+        const tasksRef = ref(db, "tasks");
+        onValue(tasksRef, (snapshot) => {
+            const data = snapshot.val();
+            const tasksList = data
+                ? Object.keys(data).map((key) => ({ id: key, ...data[key] }))
+                : [];
+            setTasks(tasksList);
+        });
+    }, []);
+
+    const addTask = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (newTask.trim()) {
-            setTasks((prevTasks) => [
-                ...prevTasks,
-                { text: newTask.trim(), isChecked: false }
-            ]);
+            const tasksRef = ref(db, "tasks");
+            const newTaskRef = push(tasksRef);
+            await set(newTaskRef, {
+                text: newTask.trim(),
+                isChecked: false,
+            });
             setNewTask("");
         }
     };
 
-    const updateTaskStatus = (index: number, isChecked: boolean) => {
+    const updateTaskStatus = async (id: string, isChecked: boolean) => {
+        const taskRef = ref(db, `tasks/${id}`);
+        await update(taskRef, { isChecked });
+
         setTasks((prevTasks) =>
-            prevTasks.map((task, i) =>
-                i === index ? { ...task, isChecked } : task
+            prevTasks.map((task) =>
+                task.id === id ? { ...task, isChecked } : task
             )
         );
     };
 
-    const removeTask = (index: number) => {
-        setTasks((prevTasks) => prevTasks.filter((_, i) => i !== index));
+    const removeTask = async (id: string) => {
+        const taskRef = ref(db, `tasks/${id}`);
+        const taskSnapshot = await get(taskRef);
+        const taskData = taskSnapshot.val();
+
+        if (taskData) {
+            const deletedTasksRef = ref(db, `deletedTasks/${id}`);
+            await set(deletedTasksRef, taskData);
+            await remove(taskRef);
+
+            setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
+        }
     };
 
-    const completedTasksCount = tasks.filter(task => task.isChecked).length;
+    const completedTasksCount = tasks.filter((task) => task.isChecked).length;
     const totalTasksCount = tasks.length;
-    const completionRatio = totalTasksCount === 0 ? 0 : (completedTasksCount / totalTasksCount) * 100;
+    const completionRatio =
+        totalTasksCount === 0 ? 0 : (completedTasksCount / totalTasksCount) * 100;
 
     return (
         <ChakraProvider>
@@ -75,23 +110,28 @@ export default function App({ Component, pageProps }: AppProps) {
                         </Flex>
                     </form>
 
-
                     <Box mt={5}>
                         {tasks
                             .sort((a, b) => Number(a.isChecked) - Number(b.isChecked))
-                            .map((task, index) => (
+                            .map((task) => (
                                 <TaskItem
-                                    key={index}
+                                    key={task.id}
                                     task={task}
-                                    index={index}
                                     updateTaskStatus={updateTaskStatus}
                                     removeTask={removeTask}
                                 />
                             ))}
                     </Box>
 
-                    <Text mt={5} mb={2}>Progress</Text>
-                    <Progress value={completionRatio} size="lg" colorScheme="green" mb={5} />
+                    <Text mt={5} mb={2}>
+                        Progress
+                    </Text>
+                    <Progress
+                        value={completionRatio}
+                        size="lg"
+                        colorScheme="green"
+                        mb={5}
+                    />
                 </Flex>
             </Flex>
         </ChakraProvider>
@@ -100,14 +140,12 @@ export default function App({ Component, pageProps }: AppProps) {
 
 const TaskItem = ({
                       task,
-                      index,
                       updateTaskStatus,
-                      removeTask
+                      removeTask,
                   }: {
-    task: { text: string; isChecked: boolean };
-    index: number;
-    updateTaskStatus: (index: number, isChecked: boolean) => void;
-    removeTask: (index: number) => void;
+    task: Task;
+    updateTaskStatus: (id: string, isChecked: boolean) => void;
+    removeTask: (id: string) => void;
 }) => {
     return (
         <Flex
@@ -122,22 +160,14 @@ const TaskItem = ({
         >
             <Checkbox
                 isChecked={task.isChecked}
-                onChange={(e) => updateTaskStatus(index, e.target.checked)}
+                onChange={(e) => updateTaskStatus(task.id, e.target.checked)}
                 colorScheme="green"
                 flexGrow={1}
             >
                 <Text ml={2}>{task.text}</Text>
             </Checkbox>
             <IconButton
-                onClick={() => removeTask(index)}
-                bg="green.500"
-                color="white"
-                aria-label="Edit task"
-                icon={<EditIcon />}
-                ml={3}
-            />
-            <IconButton
-                onClick={() => removeTask(index)}
+                onClick={() => removeTask(task.id)}
                 bg="red.500"
                 color="white"
                 aria-label="Delete task"

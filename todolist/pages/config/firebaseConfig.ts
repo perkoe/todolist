@@ -1,7 +1,8 @@
 import { initializeApp } from 'firebase/app';
-import { firebaseConfig } from './firebaseKeys';
+import { getDatabase } from 'firebase/database';
+import firebaseConfig from './firebaseKeys';
 
 
 const app = initializeApp(firebaseConfig);
-
-export { app };
+const db = getDatabase(app);
+export { db };
