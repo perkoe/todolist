@@ -45,6 +45,13 @@ You can find the live application at the following link:
 
 Open http://localhost:3000 in your browser to view the application.
 
+### Database
+
+This application uses Firebase Realtime Database to store tasks. The reason for using a database is because i liked the stat component provided by Chakra UI and wanted to show real data analytics.
+The database entries can be accessed in JSON format via the following URL:
+
+https://todolist-ab4a9-default-rtdb.firebaseio.com/.json
+
 ### Analysis Functions
 
 The application includes several functions to analyze and present key metrics about the tasks. Here are the details of these functions:
