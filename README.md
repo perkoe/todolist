@@ -31,17 +31,17 @@ You can find the live application at the following link:
    
 2. **Install Dependencies**
 
-```bash
-yarn install
-# or
-npm install
+      ```bash
+   yarn install
+      # or
+   npm install
 
 3. **Run the Development Server**
 
-```bash
-yarn dev
-# or
-npm run dev
+   ```bash
+   yarn dev
+      # or
+   npm run dev
 
 Open http://localhost:3000 in your browser to view the application.
 
@@ -52,11 +52,16 @@ The application includes several functions to analyze and present key metrics ab
 <img width="435" alt="image" src="https://github.com/user-attachments/assets/d3448063-e489-4c08-90ab-ae901a6216a4">
 
 
-Completed Tasks Count: The number of tasks that have been marked as completed.
-Total Tasks Count: The total number of tasks in the system.
-Completion Ratio: The percentage of tasks that have been completed out of the total tasks.
-Deleted Tasks Ratio: The percentage of tasks that have been deleted out of the combined total of existing and deleted tasks.
-Total Tasks Count Percentage: The percentage of tasks that are still active out of the combined total of existing and deleted tasks.
+**Completed Tasks Count:** The number of tasks that have been marked as completed.
+
+**Total Tasks Count:** The total number of tasks in the system.
+
+**Completion Ratio:** The percentage of tasks that have been completed out of the total tasks.
+
+**Deleted Tasks Ratio:** The percentage of tasks that have been deleted out of the combined total of existing and deleted tasks.
+
+**Total Tasks Count Percentage:** The percentage of tasks that are still active out of the combined total of existing and deleted tasks.
+
 These functions help users to understand the status and progress of their tasks effectively.
 
 ### Color scheme used
