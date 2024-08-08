@@ -20,7 +20,8 @@ import {
 } from "@chakra-ui/react";
 import {DeleteIcon} from "@chakra-ui/icons";
 import {ref, set, push, onValue, update, remove, get} from "firebase/database";
-import {db} from "./config/firebaseConfig";
+import { db } from "@/config/firebaseConfig";
+
 
 interface Task {
     id: string;
